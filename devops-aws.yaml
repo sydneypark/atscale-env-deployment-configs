@@ -1,0 +1,145 @@
+# Use this block to configure the AtScale base Helm chart. You can
+# choose from using the OCI registry or a git branch (in case of testing a not released feature).
+# To use the OCI registry, set `helmFromDocker` to `true` and set the `version` to the desired version.
+# To use a git branch, set `helmFromDocker` to `false` and set the `version` to the desired branch.
+# The `version` should be the full version number, including the patch version.
+# For example, if the desired version is `2025.8.0`, set `version` to `2025.8.0`.
+
+argo-deploy:
+  helmFromDocker: false
+  version: 2025.9.0
+
+## Use the following blocks to configure the AtScale components.
+# You can override the default values by setting the desired values.
+# For example, if you want to use a different image, you can set the `image.repository` to the desired image.
+# If you want to use a different image tag, you can set the `image.tag` to the desired tag.
+
+global:
+  atscale:
+    keycloak:
+      users:
+        existingSecret: "keycloak-users"
+        existingSecretKeycloakAdminKeyRef: "keycloakAdmin"
+        existingSecretKeycloakAdminPasswordKeyRef: "keycloakPassword"
+        existingSecretAtscaleAdminKeyRef: "atscaleAdmin"
+        existingSecretAtscaleAdminPassKeyRef: "atscalePassword"
+
+      clients:
+        api:
+          clientSecret: "atscale"
+        engine:
+          clientSecret: "atscale"
+        entitlement:
+          clientSecret: "atscale"
+        modeler:
+          clientSecret: "atscale"
+        publicApi:
+          clientSecret: "atscale"
+
+    tls:
+      existingSecret: atscale-internal-tls
+  ingressDomain: devops-aws.atscaleinternal.com
+
+atscale-api:
+  replicaCount: 1
+  externalDatabase:
+    existingSecret: atscale-postgres-external
+    existingSecretDatabaseKey: database
+    existingSecretHostKey: host
+    existingSecretPasswordKey: password
+    existingSecretPortKey: port
+    existingSecretSslEnabledKey: sslEnabled
+    existingSecretUserKey: user
+  # image:
+  #   pullPolicy: Always
+  #   repository: ghcr.io/atscaleinc/sml/api
+  #   tag: release-2025.7.0
+  # imagePullSecrets:
+  #   - name: ghcr-credentials
+atscale-engine:
+  replicaCount: 1
+  externalDatabase:
+    existingSecret: atscale-postgres-external
+    existingSecretDatabaseKey: database
+    existingSecretHostKey: host
+    existingSecretPasswordKey: password
+    existingSecretPortKey: port
+    existingSecretSslEnabledKey: sslEnabled
+    existingSecretUserKey: user
+  externalPgwireDatabase:
+    existingSecret: pgwire-postgres-external
+    existingSecretDatabaseKey: database
+    existingSecretHostKey: host
+    existingSecretPasswordKey: password
+    existingSecretPortKey: port
+    existingSecretUserKey: user
+  # image:
+  #   pullPolicy: Always
+  #   repository: ghcr.io/atscaleinc/engine
+  #   tag: release-2025.6.3
+  # imagePullSecrets:
+  #   - name: ghcr-credentials
+  gateway:
+    replicaCount: 1
+atscale-entitlement:
+  replicaCount: 1
+  externalDatabase:
+    existingSecret: atscale-postgres-external
+    existingSecretDatabaseKey: database
+    existingSecretHostKey: host
+    existingSecretPasswordKey: password
+    existingSecretPortKey: port
+    existingSecretSslModeKey: sslMode
+    existingSecretUserKey: user
+  # image:
+  #   pullPolicy: Always
+  #   repository: ghcr.io/atscaleinc/entitlement
+  #   tag: release-2025.6.3-dev
+  # imagePullSecrets:
+  #   - name: ghcr-credentials
+atscale-proxy:
+  tls:
+    existingSecret: atscale-internal-tls
+  replicaCount: 1
+  service:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    type: LoadBalancer
+atscale-sml:
+  replicaCount: 1
+  # image:
+  #   pullPolicy: Always
+  #   repository: ghcr.io/atscaleinc/sml/web
+  #   tag: release-2025.6.3
+  # imagePullSecrets:
+  #   - name: ghcr-credentials
+keycloak:
+  # image:
+  #   registry: ghcr.io
+  #   repository: atscaleinc/keycloak
+  #   pullPolicy: Always
+  #   tag: 26.1.5
+  #   pullSecrets:
+  #     - ghcr-credentials
+  externalDatabase:
+    existingSecret: keycloak-postgres-external
+    existingSecretDatabaseKey: database
+    existingSecretHostKey: host
+    existingSecretPasswordKey: password
+    existingSecretPortKey: port
+    existingSecretUserKey: user
+postgres:
+  enabled: false
+redis:
+  master:
+    persistence:
+      size: 32Gi
+  replica:
+    replicaCount: 3
+    persistence:
+      size: 32Gi
+telemetry:
+  replicaCount: 1
